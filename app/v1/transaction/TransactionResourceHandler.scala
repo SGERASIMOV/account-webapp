@@ -1,5 +1,6 @@
 package v1.transaction
 
+import java.sql.Timestamp
 import javax.inject.{Inject, Singleton}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -29,7 +30,7 @@ class TransactionResourceHandler @Inject()(transactionRepository: TransactionRep
                                           (implicit ec: ExecutionContext) {
 
   def create(transactionInput: TransactionFormInput): Future[TransactionResource] = {
-    transactionRepository.create(TransactionCreationData(transactionInput.actionType, transactionInput.changeAmount))
+    transactionRepository.create(TransactionData(0, Timestamp.valueOf(LocalDateTime.now()), transactionInput.actionType, transactionInput.changeAmount))
       .map { savedData =>createTransactionResource(savedData)
     }
   }
@@ -50,7 +51,7 @@ class TransactionResourceHandler @Inject()(transactionRepository: TransactionRep
   }
 
   private def createTransactionResource(p: TransactionData): TransactionResource = {
-    TransactionResource(p.id, link(p.id), p.createdDate, p.actionType, p.changeAmount)
+    TransactionResource(p.id, link(p.id), p.createdDate.toLocalDateTime, p.actionType, p.changeAmount)
   }
 
   def link(id: Long): String = {
