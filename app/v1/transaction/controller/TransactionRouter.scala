@@ -1,4 +1,4 @@
-package v1.transaction
+package v1.transaction.controller
 
 import javax.inject.Inject
 

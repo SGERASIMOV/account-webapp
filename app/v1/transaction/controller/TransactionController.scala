@@ -1,15 +1,14 @@
-package v1.transaction
+package v1.transaction.controller
 
 import javax.inject.{Inject, Singleton}
 
 import play.api.Logger
-import play.api.data.Form
 import play.api.libs.json.Json
 import play.api.mvc._
+import v1.transaction.forms.TransactionControllerForms
+import v1.transaction.service.TransactionResourceHandler
 
 import scala.concurrent.{ExecutionContext, Future}
-
-case class TransactionFormInput(actionType: String, changeAmount: BigDecimal)
 
 /**
   * Takes HTTP requests and produces JSON.
@@ -17,7 +16,7 @@ case class TransactionFormInput(actionType: String, changeAmount: BigDecimal)
 @Singleton
 class TransactionController @Inject()(cc: ControllerComponents, transactionResourceHandler: TransactionResourceHandler)
                                      (implicit ec: ExecutionContext)
-  extends AbstractController(cc) with play.api.i18n.I18nSupport {
+  extends AbstractController(cc) with play.api.i18n.I18nSupport with TransactionControllerForms {
 
   private val logger = Logger(getClass)
 
@@ -32,33 +31,24 @@ class TransactionController @Inject()(cc: ControllerComponents, transactionResou
     logger.info("process: ")
     form.bindFromRequest().fold(
       formWithErrors => Future.successful(BadRequest(formWithErrors.errorsAsJson)),
-      input => transactionResourceHandler.create(input).map { transaction =>
-        Created(Json.toJson(transaction)).withHeaders(LOCATION -> transaction.link)
-      }
+      input => transactionResourceHandler.create(input.changeAmount, input.actionType)
+        .map {
+          case Right(transaction) => Created(Json.toJson(transaction)).withHeaders(LOCATION -> transaction.link)
+          case Left(message) => BadRequest(message)
+        }
     )
-
   }
 
   def show(id: String): Action[AnyContent] = Action.async { implicit request =>
     logger.info(s"show: id = $id")
     toLong(id) match {
       case None => Future.successful(BadRequest("transaction id must be of type Long"))
-      case Some(id) => {
-        transactionResourceHandler.lookup(id).map { transaction =>
+      case Some(trId) =>
+        transactionResourceHandler.lookup(trId).map { transaction =>
           Ok(Json.toJson(transaction))
         }
-      }
     }
   }
-
-  import play.api.data.Forms._
-
-  private val form = Form(
-    mapping(
-      "actionType" -> nonEmptyText,
-      "changeAmount" -> bigDecimal
-    )(TransactionFormInput.apply)(TransactionFormInput.unapply)
-  )
 
   def toLong(s: String): Option[Long] = {
     try {

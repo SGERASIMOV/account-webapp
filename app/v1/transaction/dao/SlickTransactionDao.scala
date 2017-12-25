@@ -1,4 +1,4 @@
-package v1.transaction
+package v1.transaction.dao
 
 import java.sql.Timestamp
 import javax.inject.{Inject, Singleton}
@@ -7,29 +7,26 @@ import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.H2Profile
 import slick.jdbc.H2Profile.api._
 import slick.jdbc.meta.MTable
+import TransactionDao.{TransactionDao, TransactionData}
+import v1.transaction.aggregator.ActionType
+import v1.transaction.aggregator.ActionType.ActionType
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class TransactionData(id: Long, createdDate: Timestamp, actionType: String, changeAmount: BigDecimal)
-
-trait TransactionRepository {
-
-  def list(): Future[Iterable[TransactionData]]
-
-  def get(id: Long): Future[Option[TransactionData]]
-
-  def create(data: TransactionData): Future[TransactionData]
-}
-
-object TransactionRepositoryImpl {
+object SlickTransactionDao {
 
   class Transactions(tag: Tag) extends Table[TransactionData](tag, "TRANSACTIONS") {
+
+    implicit val actionTypeTypeMapper = MappedColumnType.base[ActionType, String](
+      e => e.toString,
+      s => ActionType.withName(s)
+    )
 
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
 
     def created_date = column[Timestamp]("created_date")
 
-    def action_type = column[String]("action_type")
+    def action_type = column[ActionType]("action_type")
 
     def change_amount = column[BigDecimal]("change_amount")
 
@@ -40,11 +37,11 @@ object TransactionRepositoryImpl {
 }
 
 
-import TransactionRepositoryImpl._
+import v1.transaction.dao.SlickTransactionDao._
 
 @Singleton
-class TransactionRepositoryImpl @Inject()(override protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext)
-  extends TransactionRepository with HasDatabaseConfigProvider[H2Profile] {
+class SlickTransactionDao @Inject()(override protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext)
+  extends TransactionDao with HasDatabaseConfigProvider[H2Profile] {
 
   private val dbInit = db.run {
     MTable.getTables(transactions.baseTableRow.tableName).
@@ -56,7 +53,7 @@ class TransactionRepositoryImpl @Inject()(override protected val dbConfigProvide
   // Allows to run any queries to DB only when it is completely initialized.
   private def initialized[T](block: => Future[T]): Future[T] = dbInit.flatMap(_ => block)
 
-  def list(): Future[Iterable[TransactionData]] = initialized {
+  override def list(): Future[Iterable[TransactionData]] = initialized {
     db.
       run {
         {
@@ -83,7 +80,7 @@ class TransactionRepositoryImpl @Inject()(override protected val dbConfigProvide
       }
   }
 
-  def create(data: TransactionData): Future[TransactionData] = initialized {
+  override def create(data: TransactionData): Future[TransactionData] = initialized {
     db.run(transactions returning transactions.map(_.id) into ((tr, id) => tr.copy(id = id)) += data)
   }
 
