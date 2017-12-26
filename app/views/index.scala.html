@@ -1,5 +1,13 @@
-@()
-
-@main("Welcome to Play") {
-  <h1>Welcome to Play!</h1>
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Home</title>
+    <link rel="stylesheet" href="@routes.Assets.versioned("compiled/styles.css")">
+    <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")">
+</head>
+<body>
+<!--<h1>Hello Play</h1>-->
+<div id="transactions"></div>
+</body>
+<script src="@routes.Assets.versioned("compiled/bundle.js")" ></script>
+</html>

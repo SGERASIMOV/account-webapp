@@ -25,7 +25,7 @@ object TransactionResource {
         "id" -> transaction.id,
         "link" -> transaction.link,
         "createdDate" -> transaction.createdDate,
-        "actionType" -> transaction.actionType,
+        "actionType" -> transaction.actionType.toString,
         "changeAmount" -> transaction.changeAmount
       )
     }
