@@ -42,7 +42,7 @@ class TransactionsComponent extends React.Component {
                           headerStyle: {background: 'lightyellow'}
                         },
                         {
-                          Header: "Change Amount",
+                          Header: "Amount",
                           accessor: "changeAmount",
                           headerStyle: {background: 'lightyellow'}
                         },
