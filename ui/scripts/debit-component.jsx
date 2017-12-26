@@ -28,6 +28,7 @@ class DebitComponent extends React.Component {
               console.log(response);
             })
             .catch(function (error) {
+              alert(error.response.data)
               console.log(error);
             });
     }
