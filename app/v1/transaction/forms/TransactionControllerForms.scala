@@ -18,7 +18,7 @@ trait TransactionControllerForms {
   )
 
   private def isAmountPositive(changeAmount: BigDecimal): Boolean = {
-    changeAmount >= 0
+    changeAmount > 0
   }
 
   private def isValidActionType(actionType: String): Boolean = {
