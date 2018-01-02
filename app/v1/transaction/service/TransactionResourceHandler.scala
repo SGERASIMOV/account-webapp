@@ -6,7 +6,7 @@ import javax.inject.{Inject, Singleton}
 import akka.actor.{ActorRef, ActorSystem, Props}
 import play.api.libs.json._
 import v1.transaction.aggregator.ActionType.ActionType
-import v1.transaction.aggregator.AccountRepositoryActor.{ACCOUNT_TIMEOUT, MakeCredit, MakeDebit}
+import v1.transaction.aggregator.AccountRepositoryActor.{AccountTimeout, MakeCredit, MakeDebit}
 import v1.transaction.aggregator.{AccountRepositoryActor, ActionType}
 import v1.transaction.dao.TransactionDao.{TransactionDao, TransactionData}
 import akka.pattern.ask

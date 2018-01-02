@@ -8,8 +8,7 @@ import slick.jdbc.H2Profile
 import slick.jdbc.H2Profile.api._
 import slick.jdbc.meta.MTable
 import TransactionDao.{TransactionDao, TransactionData}
-import v1.transaction.aggregator.ActionType
-import v1.transaction.aggregator.ActionType.ActionType
+import v1.transaction.aggregator.ActionType._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -19,7 +18,9 @@ object SlickTransactionDao {
 
     implicit val actionTypeTypeMapper = MappedColumnType.base[ActionType, String](
       e => e.toString,
-      s => ActionType.withName(s)
+      s => {
+        if (s == "Debit") Debit else Credit
+      }
     )
 
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)

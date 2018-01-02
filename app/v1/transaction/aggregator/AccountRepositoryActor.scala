@@ -18,8 +18,8 @@ object AccountRepositoryActor {
 
   case class MakeCredit(changeAmount: BigDecimal)
 
-  val ACTION_TIMEOUT: FiniteDuration = 2 seconds
-  implicit val ACCOUNT_TIMEOUT: Timeout = Timeout(ACTION_TIMEOUT + (3 seconds))
+  val ActionTimeout: FiniteDuration = 2 seconds
+  implicit val AccountTimeout: Timeout = Timeout(ActionTimeout + (3 seconds))
 }
 
 class AccountRepositoryActor(transactionDao: TransactionDao)(implicit ex: ExecutionContext) extends Actor {
@@ -34,7 +34,7 @@ class AccountRepositoryActor(transactionDao: TransactionDao)(implicit ex: Execut
   def debit(changeAmount: BigDecimal): Try[TransactionData] = {
     Try {
       val debit = transactionDao.create(createTransactionData(changeAmount, ActionType.Debit))
-      Await.result(debit, ACTION_TIMEOUT)
+      Await.result(debit, ActionTimeout)
     }
   }
 
@@ -43,7 +43,7 @@ class AccountRepositoryActor(transactionDao: TransactionDao)(implicit ex: Execut
     Try {
       if (currentBalance >= changeAmount) {
         val credit = transactionDao.create(createTransactionData(changeAmount, ActionType.Credit))
-        Await.result(credit, ACTION_TIMEOUT)
+        Await.result(credit, ActionTimeout)
       } else {
         throw new IllegalStateException("Current balance is too low.")
       }
@@ -55,7 +55,7 @@ class AccountRepositoryActor(transactionDao: TransactionDao)(implicit ex: Execut
     val currentBalance = transactionDao.list().
       map(seq => seq.foldLeft(0: BigDecimal)((balance: BigDecimal, trData) => processTransaction(balance, trData)))
 
-    Await.result(currentBalance, ACTION_TIMEOUT)
+    Await.result(currentBalance, ActionTimeout)
   }
 
   private def processTransaction(balance: BigDecimal, transactionData: TransactionData): BigDecimal = {
