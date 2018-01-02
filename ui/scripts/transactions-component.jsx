@@ -1,6 +1,6 @@
-import React from 'react';
-import axios from 'axios';
-import ReactTable from 'react-table'
+import React from "react";
+import axios from "axios";
+import ReactTable from "react-table"
 
 class TransactionsComponent extends React.Component {
   constructor(props) {
@@ -10,7 +10,7 @@ class TransactionsComponent extends React.Component {
     };
   }
   componentDidMount = () => {
-    axios.get('/v1/transactions/').then((response) => {
+    axios.get("/v1/transactions/").then((response) => {
       this.setState({
         data: response.data
       });
@@ -25,7 +25,7 @@ class TransactionsComponent extends React.Component {
                     if (!rowInfo) return {}
                     return {
                       style: {
-                        background: rowInfo.row.actionType === 'Debit' ? 'lightblue' : 'salmon'
+                        background: rowInfo.row.actionType === "Debit" ? "lightblue" : "salmon"
                       }
                     }
                   }}
@@ -34,22 +34,22 @@ class TransactionsComponent extends React.Component {
                         {
                           Header: "Transaction Id",
                           accessor: "id",
-                          headerStyle: {background: 'lightyellow'}
+                          headerStyle: {background: "lightyellow"}
                         },
                         {
                           Header: "Action Type",
                           accessor: "actionType",
-                          headerStyle: {background: 'lightyellow'}
+                          headerStyle: {background: "lightyellow"}
                         },
                         {
                           Header: "Amount",
                           accessor: "changeAmount",
-                          headerStyle: {background: 'lightyellow'}
+                          headerStyle: {background: "lightyellow"}
                         },
                         {
                           Header: "Created Date",
                           accessor: "createdDate",
-                          headerStyle: {background: 'lightyellow'}
+                          headerStyle: {background: "lightyellow"}
                         }
                           ]}
                   defaultPageSize={10}

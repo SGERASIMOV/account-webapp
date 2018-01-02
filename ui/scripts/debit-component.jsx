@@ -1,11 +1,11 @@
-import React from 'react';
-import axios from 'axios';
+import React from "react";
+import axios from "axios";
 
 class DebitComponent extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      value: ''
+      value: ""
     };
   }
 
@@ -18,9 +18,9 @@ class DebitComponent extends React.Component {
   };
 
   handleKeyPress(e) {
-    if (e.key === 'Enter') {
-          axios.post('/v1/transactions/', {
-              actionType: 'Debit',
+    if (e.key === "Enter") {
+          axios.post("/v1/transactions/", {
+              actionType: "Debit",
               changeAmount: e.target.value
             })
             .then(function (response) {
