@@ -5,7 +5,7 @@ import javax.inject.{Inject, Singleton}
 
 import akka.actor.{ActorRef, ActorSystem, Props}
 import play.api.libs.json._
-import v1.transaction.aggregator.ActionType.ActionType
+import v1.transaction.aggregator.ActionType.{ActionType, Credit, Debit, NonExistentTransaction}
 import v1.transaction.aggregator.AccountRepositoryActor.{AccountTimeout, MakeCredit, MakeDebit}
 import v1.transaction.aggregator.{AccountRepositoryActor, ActionType}
 import v1.transaction.dao.TransactionDao.{TransactionDao, TransactionData}
@@ -38,14 +38,10 @@ class TransactionResourceHandler @Inject()(system: ActorSystem, transactionDao: 
 
   val accountRepositoryActor: ActorRef = system.actorOf(Props(new AccountRepositoryActor(transactionDao)), "account-actor")
 
-  def create(changeAmount: BigDecimal, actionType: String): Future[Either[String, TransactionResource]] = {
-    if (actionType == ActionType.Debit.toString) {
-      debit(changeAmount)
-    } else if (actionType == ActionType.Credit.toString){
-      credit(changeAmount)
-    } else {
-      Future.successful(Left(s"No such action type:$actionType.Possible action types:${ActionType.Debit},${ActionType.Credit}."))
-    }
+  def create(changeAmount: BigDecimal, actionType: ActionType): Future[Either[String, TransactionResource]] = actionType match {
+    case Debit => debit(changeAmount)
+    case Credit => credit(changeAmount)
+    case NonExistentTransaction => Future(Left(s"No such action type:$actionType.Possible action types:${ActionType.Debit},${ActionType.Credit}."))
   }
 
   private def debit(changeAmount: BigDecimal): Future[Either[String, TransactionResource]] = {
