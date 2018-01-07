@@ -42,13 +42,13 @@ class TransactionController @Inject()(cc: ControllerComponents, transactionResou
 
   def show(id: String): Action[AnyContent] = Action.async { implicit request =>
     logger.info(s"show: id = $id")
-    toLong(id) match {
-      case Failure(_) => Future.successful(BadRequest("transaction id must be of type Long"))
-      case Success(trId) =>
+    toLong(id) fold (
+      _ => Future.successful(BadRequest("transaction id must be of type Long")),
+      trId =>
         transactionResourceHandler.lookup(trId).map { transaction =>
           Ok(Json.toJson(transaction))
         }
-    }
+    )
   }
 
   def toLong(s: String): Try[Long] = {
