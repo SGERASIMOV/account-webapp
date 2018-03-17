@@ -6,13 +6,14 @@ import javax.inject.{Inject, Singleton}
 import akka.actor.{ActorRef, ActorSystem, Props}
 import play.api.libs.json._
 import v1.transaction.aggregator.ActionType.{ActionType, Credit, Debit, NonExistentTransaction}
-import v1.transaction.aggregator.AccountRepositoryActor.{AccountTimeout, MakeCredit, MakeDebit}
+import v1.transaction.aggregator.AccountRepositoryActor.{MakeCredit, MakeDebit}
 import v1.transaction.aggregator.{AccountRepositoryActor, ActionType}
 import v1.transaction.dao.TransactionDao.{TransactionDao, TransactionData}
 import akka.pattern.ask
+import akka.util.Timeout
 
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
 
 case class TransactionResource(id: Long, link: String, createdDate: LocalDateTime,
                                actionType: ActionType, changeAmount: BigDecimal)
@@ -30,36 +31,37 @@ object TransactionResource {
       )
     }
   }
+
+  implicit val AccountTimeout: Timeout = Timeout(2 seconds)
+
 }
 
 @Singleton
 class TransactionResourceHandler @Inject()(system: ActorSystem, transactionDao: TransactionDao)
                                           (implicit ec: ExecutionContext) {
 
+  import TransactionResource._
+
   val accountRepositoryActor: ActorRef = system.actorOf(Props(new AccountRepositoryActor(transactionDao)), "account-actor")
 
-  def create(changeAmount: BigDecimal, actionType: ActionType): Future[Either[String, TransactionResource]] = actionType match {
+  def create(changeAmount: BigDecimal, actionType: ActionType): Future[TransactionResource] = actionType match {
     case Debit => debit(changeAmount)
     case Credit => credit(changeAmount)
-    case NonExistentTransaction => Future(Left(s"No such action type:$actionType.Possible action types:${ActionType.Debit},${ActionType.Credit}."))
+    case NonExistentTransaction => Future.failed(throw new IllegalStateException(s"No such action type:$actionType.Possible action types:${ActionType.Debit},${ActionType.Credit}."))
   }
 
-  private def debit(changeAmount: BigDecimal): Future[Either[String, TransactionResource]] = {
+  private def debit(changeAmount: BigDecimal): Future[TransactionResource] = {
     (accountRepositoryActor ? MakeDebit(changeAmount))
-      .mapTo[Try[TransactionData]]
-      .map {
-        case Success(savedData) => Right(createTransactionResource(savedData))
-        case Failure(e) => Left(e.getMessage)
-      }
+      .mapTo[Future[TransactionData]]
+      .flatten
+      .map(data => createTransactionResource(data))
   }
 
-  private def credit(changeAmount: BigDecimal): Future[Either[String, TransactionResource]] = {
+  private def credit(changeAmount: BigDecimal): Future[TransactionResource] = {
     (accountRepositoryActor ? MakeCredit(changeAmount))
-      .mapTo[Try[TransactionData]]
-      .map {
-        case Success(savedData) => Right(createTransactionResource(savedData))
-        case Failure(e) => Left(e.getMessage)
-      }
+      .mapTo[Future[TransactionData]]
+      .flatten
+      .map(data => createTransactionResource(data))
   }
 
   def lookup(id: Long): Future[Option[TransactionResource]] = {

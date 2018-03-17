@@ -9,7 +9,7 @@ import v1.transaction.forms.TransactionControllerForms
 import v1.transaction.service.TransactionResourceHandler
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 
 /**
   * Takes HTTP requests and produces JSON.
@@ -34,15 +34,17 @@ class TransactionController @Inject()(cc: ControllerComponents, transactionResou
       formWithErrors => Future.successful(BadRequest(formWithErrors.errorsAsJson)),
       input => transactionResourceHandler.create(input.changeAmount, input.actionType)
         .map {
-          case Right(transaction) => Created(Json.toJson(transaction)).withHeaders(LOCATION -> transaction.link)
-          case Left(message) => BadRequest(message)
+          transaction => Created(Json.toJson(transaction)).withHeaders(LOCATION -> transaction.link)
+        }
+        .recover {
+          case e: Throwable => BadRequest(e.getMessage)
         }
     )
   }
 
   def show(id: String): Action[AnyContent] = Action.async { implicit request =>
     logger.info(s"show: id = $id")
-    toLong(id) fold (
+    toLong(id) fold(
       _ => Future.successful(BadRequest("transaction id must be of type Long")),
       trId =>
         transactionResourceHandler.lookup(trId).map { transaction =>
