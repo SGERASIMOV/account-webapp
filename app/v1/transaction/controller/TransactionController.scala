@@ -2,6 +2,7 @@ package v1.transaction.controller
 
 import javax.inject.{Inject, Singleton}
 
+import akka.pattern.AskTimeoutException
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc._
@@ -37,7 +38,9 @@ class TransactionController @Inject()(cc: ControllerComponents, transactionResou
           transaction => Created(Json.toJson(transaction)).withHeaders(LOCATION -> transaction.link)
         }
         .recover {
-          case e: Throwable => BadRequest(e.getMessage)
+          case e: IllegalStateException => BadRequest(e.getMessage)
+          case _: AskTimeoutException => BadRequest("Timeout error. Please try again.")
+          case _ => BadRequest("Something went wrong. Please try again.")
         }
     )
   }
